@@ -1,0 +1,54 @@
+<%- include('partials/header') %>
+<main class="container">
+  <h2>Landlord Overview - Resident Rent Status</h2>
+
+  <form method="GET" action="/landlord/dashboard" class="filter-form">
+    <label for="month">Select Month:</label>
+    <select name="month" id="month">
+      <% for (let m = 1; m <= 12; m++) { %>
+        <option value="<%= m %>" <%= m === currentMonth ? 'selected' : '' %>>Month <%= m %></option>
+      <% } %>
+    </select>
+
+    <label for="year">Year:</label>
+    <input type="number" name="year" value="<%= currentYear %>" style="width: 100px;">
+    
+    <button type="submit" class="btn btn-secondary">Filter</button>
+  </form>
+
+  <table class="user-list-table">
+    <thead>
+      <tr>
+        <th>Resident Name</th>
+        <th>Room Number</th>
+        <th>Phone Number</th>
+        <th>Monthly Rent</th>
+        <th>Status (<%= currentMonth %>/<%= currentYear %>)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% if (residents && residents.length > 0) { %>
+        <% residents.forEach(r => { %>
+          <tr>
+            <td><%= r.resident_name %></td>
+            <td><%= r.room_number %></td>
+            <td><%= r.resident_phone %></td>
+            <td>MWK <%= r.monthly_rate %></td>
+            <td>
+              <% if (r.payment_status === 'successful') { %>
+                <span class="badge success">Paid</span>
+              <% } else { %>
+                <span class="badge failed">Unpaid</span>
+              <% } %>
+            </td>
+          </tr>
+        <% }) %>
+      <% } else { %>
+        <tr>
+          <td colspan="5">No active residents found.</td>
+        </tr>
+      <% } %>
+    </tbody>
+  </table>
+</main>
+<%- include('partials/footer') %>

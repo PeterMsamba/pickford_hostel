@@ -1,0 +1,88 @@
+<%- include('partials/header') %>
+<main class="container">
+  <h2>Resident Dashboard</h2>
+
+  <% if (!booking) { %>
+    <div class="alert alert-info">
+      <p>You have not booked a room yet.</p>
+      <a href="/rooms" class="btn btn-primary">Browse Available Rooms</a>
+    </div>
+  <% } else { %>
+    <div class="card">
+      <h3>Room Details</h3>
+      <p><strong>Room:</strong> <%= booking.room_number %></p>
+      <p><strong>Monthly Rate:</strong> MWK <%= booking.monthly_rate %></p>
+    </div>
+
+    <div class="card">
+      <h3>Rent Status (<%= currentMonth %>/<%= currentYear %>)</h3>
+      <% if (hasPaidCurrentMonth) { %>
+        <p class="status success">✓ Rent Paid for this Month</p>
+      <% } else { %>
+        <p class="status failed">⚠ Rent Unpaid for this Month</p>
+
+        <!-- Payment Form -->
+        <form id="payForm">
+          <input type="hidden" id="amount" value="<%= booking.monthly_rate %>">
+          <input type="hidden" id="roomId" value="<%= booking.room_id %>">
+          <input type="hidden" id="month" value="<%= currentMonth %>">
+          <input type="hidden" id="year" value="<%= currentYear %>">
+
+          <div class="group">
+            <label>Email</label>
+            <input type="email" id="email" value="<%= user.email %>" required />
+          </div>
+
+          <div class="group">
+            <label>Mobile Money Number (Airtel / TNM)</label>
+            <input type="tel" id="mobile" value="<%= user.phone %>" required />
+            <div id="networkBadge" class="badge"></div>
+          </div>
+
+          <button type="submit" id="btn">Pay Rent Now</button>
+        </form>
+      <% } %>
+    </div>
+  <% } %>
+</main>
+
+<script>
+  const mobileInput = document.getElementById('mobile');
+  const badge = document.getElementById('networkBadge');
+
+  if (mobileInput) {
+    mobileInput.addEventListener('input', () => {
+      const val = mobileInput.value.trim();
+      if (/^(099|098|99|98)/.test(val)) {
+        badge.textContent = 'Network: Airtel Money';
+        badge.className = 'badge airtel';
+      } else if (/^(088|089|88|89)/.test(val)) {
+        badge.textContent = 'Network: TNM Mpamba';
+        badge.className = 'badge tnm';
+      } else {
+        badge.textContent = '';
+      }
+    });
+
+    document.getElementById('payForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const res = await fetch('/api/resident/pay-rent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: document.getElementById('amount').value,
+          roomId: document.getElementById('roomId').value,
+          month: document.getElementById('month').value,
+          year: document.getElementById('year').value,
+          email: document.getElementById('email').value,
+          mobile: mobileInput.value
+        })
+      });
+      const data = await res.json();
+      if (data.success && data.checkoutUrl) {
+        window.location.href = data.checkoutUrl;
+      }
+    });
+  }
+</script>
+<%- include('partials/footer') %>

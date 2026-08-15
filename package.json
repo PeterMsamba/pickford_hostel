@@ -1,0 +1,27 @@
+{
+  "name": "pickford_hostel",
+  "version": "1.0.0",
+  "description": "",
+  "homepage": "https://github.com/PeterMsamba/pickford_hostel#readme",
+  "bugs": {
+    "url": "https://github.com/PeterMsamba/pickford_hostel/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PeterMsamba/pickford_hostel.git"
+  },
+  "license": "ISC",
+  "author": "petermsamba",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "dev": "nodemon",
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}
