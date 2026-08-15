@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title><%= typeof title !== 'undefined' ? title : 'Hostel Management' %></title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Hostel Manager</h1>
+            <nav class="nav-links">
+                <% if (typeof user !== 'undefined' && user) { %>
+                    <% if (user.role_name === 'landlord') { %>
+                        <a href="/landlord/dashboard">Dashboard</a>
+                        <a href="/landlord/residents">Residents</a>
+                        <a href="/landlord/payments">Payments</a>
+                    <% } else { %>
+                        <a href="/resident/dashboard">Dashboard</a>
+                        <a href="/resident/pay">Pay Rent</a>
+                        <a href="/resident/history">History</a>
+                    <% } %>
+                    <a href="/logout" class="btn-logout">Logout</a>
+                <% } else { %>
+                    <a href="/login">Login</a>
+                    <a href="/register">Register</a>
+                <% } %>
+            </nav>
+        </header>
+
+        <% if (typeof messages !== 'undefined') { %>
+            <% if (messages.error && messages.error.length > 0) { %>
+                <div class="alert alert-error"><%= messages.error %></div>
+            <% } %>
+            <% if (messages.success && messages.success.length > 0) { %>
+                <div class="alert alert-success"><%= messages.success %></div>
+            <% } %>
+        <% } %>
