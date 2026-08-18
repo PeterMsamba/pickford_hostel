@@ -8,7 +8,6 @@ const router = express.Router();
 // MIDDLEWARE: AUTHENTICATION & ROLE GUARDS
 // ==========================================
 
-// Ensure user is authenticated
 const requireAuth = (req, res, next) => {
     if (!req.session || !req.session.user) {
         if (req.originalUrl.startsWith('/api/')) {
@@ -19,7 +18,6 @@ const requireAuth = (req, res, next) => {
     next();
 };
 
-// Middleware factory to enforce specific role access
 const requireRole = (roleName) => {
     return (req, res, next) => {
         if (!req.session || !req.session.user) {
@@ -44,7 +42,6 @@ const requireRole = (roleName) => {
 // PAGE VIEW ROUTES (EJS RENDERING)
 // ==========================================
 
-// Root Navigation Handler
 router.get('/', (req, res) => {
     if (req.session && req.session.user) {
         return req.session.user.role_name === 'landlord'
@@ -54,7 +51,6 @@ router.get('/', (req, res) => {
     res.redirect('/login');
 });
 
-// Render Login Page
 router.get('/login', (req, res) => {
     if (req.session && req.session.user) {
         return res.redirect('/');
@@ -62,13 +58,40 @@ router.get('/login', (req, res) => {
     res.render('login', { error: null });
 });
 
-// Render Resident Dashboard Page
+// Render Resident Dashboard (with Auto-Verification Backup)
 router.get('/resident/dashboard', requireAuth, requireRole('resident'), async (req, res) => {
     try {
         const userId = req.session.user.user_id;
         const currentMonth = new Date().getMonth() + 1;
         const currentYear = new Date().getFullYear();
 
+        // 1. Verify any pending payments with PayChangu when user lands on dashboard
+        const pendingPayments = await db.query(
+            `SELECT tx_ref FROM payments WHERE user_id = $1 AND status = 'pending'`,
+            [userId]
+        );
+
+        for (const payment of pendingPayments.rows) {
+            try {
+                const response = await axios.get(
+                    `https://api.paychangu.com/verify-payment/${payment.tx_ref}`,
+                    {
+                        headers: { 'Authorization': `Bearer ${process.env.PAYCHANGU_SECRET_KEY}` }
+                    }
+                );
+
+                if (response.data && (response.data.status === 'success' || response.data.data?.status === 'success')) {
+                    await db.query(
+                        `UPDATE payments SET status = 'successful' WHERE tx_ref = $1`,
+                        [payment.tx_ref]
+                    );
+                }
+            } catch (vErr) {
+                console.error(`Verification check failed for ${payment.tx_ref}:`, vErr.message);
+            }
+        }
+
+        // 2. Fetch booking details
         const bookingQuery = `
             SELECT b.booking_id, r.room_id, r.room_number, r.monthly_rate 
             FROM bookings b
@@ -110,7 +133,6 @@ router.get('/resident/dashboard', requireAuth, requireRole('resident'), async (r
 // LANDLORD PAGE ROUTES
 // ==========================================
 
-// 1. Dashboard View (Overview Stats + Registration Form)
 router.get('/landlord/dashboard', requireAuth, requireRole('landlord'), async (req, res) => {
     try {
         const totalResidentsRes = await db.query(
@@ -135,7 +157,6 @@ router.get('/landlord/dashboard', requireAuth, requireRole('landlord'), async (r
     }
 });
 
-// 2. Residents View (Directory & Room Allocations)
 router.get('/landlord/residents', requireAuth, requireRole('landlord'), async (req, res) => {
     try {
         const query = `
@@ -166,7 +187,6 @@ router.get('/landlord/residents', requireAuth, requireRole('landlord'), async (r
     }
 });
 
-// 3. Payments View (Monthly Payment Audit Trail)
 router.get('/landlord/payments', requireAuth, requireRole('landlord'), async (req, res) => {
     try {
         const month = parseInt(req.query.month) || (new Date().getMonth() + 1);
@@ -282,6 +302,7 @@ router.post('/login', async (req, res) => {
         const user = result.rows[0];
         const normalizedRole = user.role_name ? user.role_name.toLowerCase() : 'resident';
 
+        // 1. Assign session data
         req.session.user = {
             user_id: user.user_id,
             name: user.name,
@@ -294,11 +315,21 @@ router.post('/login', async (req, res) => {
 
         const redirectUrl = normalizedRole === 'landlord' ? '/landlord/dashboard' : '/resident/dashboard';
 
-        if (isJson) {
-            return res.json({ success: true, redirectUrl });
-        }
+        // 2. Explicitly save session before executing redirect
+        req.session.save((err) => {
+            if (err) {
+                console.error('Session save error:', err);
+                const msg = 'Failed to initialize session.';
+                if (isJson) return res.status(500).json({ success: false, message: msg });
+                return res.render('login', { error: msg });
+            }
 
-        return res.redirect(redirectUrl);
+            if (isJson) {
+                return res.json({ success: true, redirectUrl });
+            }
+
+            return res.redirect(redirectUrl);
+        });
 
     } catch (err) {
         console.error('Login Error:', err);
@@ -416,7 +447,6 @@ router.get('/api/resident/dashboard', requireAuth, requireRole('resident'), asyn
     }
 });
 
-// Consolidated PayChangu Payment Route
 router.post('/api/resident/pay-rent', requireAuth, requireRole('resident'), async (req, res) => {
     const { amount, roomId, month, year, email, mobile } = req.body;
     const userId = req.session.user.user_id;
@@ -428,6 +458,8 @@ router.post('/api/resident/pay-rent', requireAuth, requireRole('resident'), asyn
             VALUES ($1, $2, $3, $4, $5, $6, 'pending')
         `, [userId, roomId, amount, month, year, txRef]);
 
+        const baseUrl = process.env.APP_URL || process.env.BASE_URL || 'http://localhost:5000';
+
         const payload = {
             amount: parseFloat(amount),
             currency: "MWK",
@@ -435,8 +467,8 @@ router.post('/api/resident/pay-rent', requireAuth, requireRole('resident'), asyn
             first_name: req.session.user.name.split(' ')[0] || 'Resident',
             last_name: req.session.user.name.split(' ')[1] || 'Student',
             mobile: mobile ? mobile.trim() : req.session.user.phone,
-            callback_url: `${process.env.APP_URL || process.env.BASE_URL || 'http://localhost:5000'}/api/webhook`,
-            return_url: `${process.env.APP_URL || process.env.BASE_URL || 'http://localhost:5000'}/resident/dashboard`,
+            callback_url: `${baseUrl}/api/webhook`,
+            return_url: `${baseUrl}/resident/dashboard`,
             tx_ref: txRef,
             customization: {
                 title: "Hostel Rent Payment",
@@ -470,10 +502,12 @@ router.post('/api/resident/pay-rent', requireAuth, requireRole('resident'), asyn
     }
 });
 
-// PayChangu Webhook Listener
+// Robust PayChangu Webhook Listener
 router.post('/api/webhook', async (req, res) => {
     try {
-        const { tx_ref, status } = req.body;
+        const tx_ref = req.body.tx_ref || req.body.data?.tx_ref;
+        const status = req.body.status || req.body.data?.status;
+
         const paymentStatus = (status === 'success' || status === 'successful') ? 'successful' : 'failed';
 
         if (tx_ref) {

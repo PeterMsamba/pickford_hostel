@@ -51,3 +51,10 @@ CREATE TABLE IF NOT EXISTS payments (
     status VARCHAR(20) DEFAULT 'pending',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+INSERT INTO rooms (room_number, monthly_rate, status)
+VALUES 
+    ('Room A1', 45000.00, 'available'),
+    ('Room A2', 50000.00, 'available'),
+    ('Room B1', 60000.00, 'available')
+ON CONFLICT (room_number) DO NOTHING;
