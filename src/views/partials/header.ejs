@@ -1,16 +1,67 @@
-<header>
-    <h1>PickFord Hostel Portal</h1>
-    <% if (typeof user !== 'undefined' && user) { %>
-        <nav>
-            <% if (user.role_name === 'landlord') { %>
-                <a href="/landlord/dashboard">Dashboard</a> | 
-                <a href="/landlord/residents">Residents</a> | 
-                <a href="/landlord/payments">Payments</a> | 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= typeof title !== 'undefined' ? title : 'Hostel Management System' %></title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .navbar {
+            background-color: #1f2937;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .navbar brand {
+            color: #ffffff;
+            font-size: 1.25rem;
+            font-weight: bold;
+            text-decoration: none;
+        }
+        .nav-links {
+            list-style: none;
+            display: flex;
+            gap: 1.5rem;
+            margin: 0;
+            padding: 0;
+        }
+        .nav-links a {
+            color: #d1d5db;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .nav-links a:hover {
+            color: #ffffff;
+        }
+        .logout-btn {
+            color: #ef4444 !important;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav class="navbar">
+            <a href="/" class="brand">Pickford Hostel</a>
+
+            <% if (typeof user !== 'undefined' && user) { %>
+                <ul class="nav-links">
+                    <% if (user.role_name === 'landlord') { %>
+                        <li><a href="/landlord/dashboard">Dashboard</a></li>
+                        <li><a href="/landlord/residents">Residents</a></li>
+                        <li><a href="/landlord/payment-status">Payment Status</a></li>
+                        <li><a href="/landlord/payments">Payment Logs</a></li>
+                    <% } else if (user.role_name === 'resident') { %>
+                        <li><a href="/resident/dashboard">Dashboard</a></li>
+                        <li><a href="/rooms">Book Room</a></li>
+                        <li><a href="/resident/payment-history">Payment History</a></li>
+                    <% } %>
+                    <li><a href="/logout" class="logout-btn">Logout</a></li>
+                </ul>
             <% } else { %>
-                <a href="/resident/dashboard">Dashboard</a> | 
+                <ul class="nav-links">
+                    <li><a href="/login">Login</a></li>
+                </ul>
             <% } %>
-            <a href="/logout">Logout</a>
         </nav>
-    <% } %>
-</header>
-<hr>
+    </header>

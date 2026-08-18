@@ -58,3 +58,5 @@ VALUES
     ('Room A2', 50000.00, 'available'),
     ('Room B1', 60000.00, 'available')
 ON CONFLICT (room_number) DO NOTHING;
+
+ALTER TABLE users ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE;

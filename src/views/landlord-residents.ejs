@@ -12,12 +12,13 @@
                 <th>Program of Study</th>
                 <th>Semester</th>
                 <th>Assigned Room</th>
+                <th>Actions</th>
             </tr>
         </thead>
         <tbody>
             <% if (residents.length === 0) { %>
                 <tr>
-                    <td colspan="6" style="text-align: center;">No registered residents found.</td>
+                    <td colspan="7" style="text-align: center;">No registered residents found.</td>
                 </tr>
             <% } else { %>
                 <% residents.forEach(resident => { %>
@@ -28,11 +29,44 @@
                         <td><%= resident.program_of_study || 'N/A' %></td>
                         <td><%= resident.semester || 'N/A' %></td>
                         <td><strong><%= resident.room_number %></strong></td>
+                        <td style="text-align: center;">
+                            <button 
+                                onclick="deleteResident('<%= resident.user_id %>', '<%= resident.name %>')"
+                                style="background-color: #dc3545; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer;">
+                                Remove
+                            </button>
+                        </td>
                     </tr>
                 <% }); %>
             <% } %>
         </tbody>
     </table>
 </main>
+
+<script>
+async function deleteResident(userId, name) {
+    if (!confirm(`Are you sure you want to remove ${name}? This will free up their assigned room.`)) {
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/landlord/delete-resident', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId })
+        });
+
+        const data = await response.json();
+        alert(data.message);
+
+        if (data.success) {
+            window.location.reload();
+        }
+    } catch (err) {
+        console.error('Delete error:', err);
+        alert('An error occurred while attempting to remove the resident.');
+    }
+}
+</script>
 
 <%- include('partials/footer') %>

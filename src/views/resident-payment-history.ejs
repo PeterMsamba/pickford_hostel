@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Resident - Payment History</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <nav>
+        <a href="/resident/dashboard">Dashboard</a>
+        <a href="/resident/payment-history">Payment History</a>
+        <a href="/logout">Logout</a>
+    </nav>
+
+    <h2>My Payment History</h2>
+
+    <table border="1" cellpadding="8">
+        <thead>
+            <tr>
+                <th>Billing Period</th>
+                <th>Room</th>
+                <th>Amount</th>
+                <th>Transaction Ref</th>
+                <th>Status</th>
+                <th>Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% if (payments.length === 0) { %>
+                <tr><td colspan="6">No payment records found.</td></tr>
+            <% } else { %>
+                <% payments.forEach(p => { %>
+                    <tr>
+                        <td><%= p.payment_month %>/<%= p.payment_year %></td>
+                        <td><%= p.room_number %></td>
+                        <td>MWK <%= p.amount %></td>
+                        <td><%= p.tx_ref %></td>
+                        <td>
+                            <strong style="color: <%= p.status === 'successful' ? 'green' : 'red' %>;">
+                                <%= p.status.toUpperCase() %>
+                            </strong>
+                        </td>
+                        <td><%= new Date(p.created_at).toLocaleString() %></td>
+                    </tr>
+                <% }); %>
+            <% } %>
+        </tbody>
+    </table>
+</body>
+</html>

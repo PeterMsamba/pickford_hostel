@@ -523,6 +523,141 @@ router.post('/api/webhook', async (req, res) => {
     }
 });
 
+// Render Paid vs Unpaid Residents Page
+router.get('/landlord/payment-status', requireAuth, requireRole('landlord'), async (req, res) => {
+    try {
+        const month = parseInt(req.query.month) || (new Date().getMonth() + 1);
+        const year = parseInt(req.query.year) || new Date().getFullYear();
+
+        const query = `
+            SELECT 
+                u.user_id,
+                u.name AS resident_name,
+                u.email AS resident_email,
+                u.phone AS resident_phone,
+                COALESCE(r.room_number, 'No Room') AS room_number,
+                COALESCE(r.monthly_rate, 0) AS monthly_rate,
+                p.payment_id,
+                p.tx_ref,
+                p.created_at AS payment_date,
+                CASE 
+                    WHEN p.status = 'successful' THEN 'PAID'
+                    ELSE 'UNPAID'
+                END AS payment_status
+            FROM users u
+            JOIN roles ro ON u.role_id = ro.role_id
+            LEFT JOIN bookings b ON u.user_id = b.user_id AND b.booking_status = 'confirmed'
+            LEFT JOIN rooms r ON b.room_id = r.room_id
+            LEFT JOIN payments p ON u.user_id = p.user_id 
+                                AND r.room_id = p.room_id 
+                                AND p.payment_month = $1 
+                                AND p.payment_year = $2 
+                                AND p.status = 'successful'
+            WHERE ro.role_name = 'resident' AND u.is_active = TRUE
+            ORDER BY room_number ASC, u.name ASC;
+        `;
+
+        const result = await db.query(query, [month, year]);
+
+        // Separate residents into Paid and Unpaid lists
+        const paidResidents = result.rows.filter(r => r.payment_status === 'PAID');
+        const unpaidResidents = result.rows.filter(r => r.payment_status === 'UNPAID');
+
+        res.render('landlord-payment-status', {
+            user: req.session.user,
+            paidResidents,
+            unpaidResidents,
+            selectedMonth: month,
+            selectedYear: year
+        });
+    } catch (err) {
+        console.error('Error loading payment status report:', err);
+        res.status(500).send('Server Error');
+    }
+});
+
+// Delete Resident (Deactivates account and frees up room booking)
+router.post('/api/landlord/delete-resident', requireAuth, requireRole('landlord'), async (req, res) => {
+    const { userId } = req.body;
+
+    if (!userId) {
+        return res.status(400).json({ success: false, message: 'User ID is required.' });
+    }
+
+    try {
+        await db.query('BEGIN');
+
+        // 1. Get resident's active booking
+        const bookingRes = await db.query(
+            `SELECT room_id FROM bookings WHERE user_id = $1 AND booking_status = 'confirmed'`,
+            [userId]
+        );
+
+        if (bookingRes.rows.length > 0) {
+            const roomId = bookingRes.rows[0].room_id;
+
+            // Mark booking as cancelled
+            await db.query(
+                `UPDATE bookings SET booking_status = 'cancelled' WHERE user_id = $1`,
+                [userId]
+            );
+
+            // Set room back to available
+            await db.query(
+                `UPDATE rooms SET status = 'available' WHERE room_id = $1`,
+                [roomId]
+            );
+        }
+
+        // 2. Soft delete the resident account
+        await db.query(
+            `UPDATE users SET is_active = FALSE WHERE user_id = $1`,
+            [userId]
+        );
+
+        await db.query('COMMIT');
+        return res.json({ success: true, message: 'Resident account removed successfully.' });
+
+    } catch (err) {
+        await db.query('ROLLBACK');
+        console.error('Error removing resident:', err);
+        return res.status(500).json({ success: false, message: 'Failed to delete resident.' });
+    }
+});
+
+// Render Resident Payment History
+router.get('/resident/payment-history', requireAuth, requireRole('resident'), async (req, res) => {
+    try {
+        const userId = req.session.user.user_id;
+
+        const query = `
+            SELECT 
+                p.payment_id,
+                p.amount,
+                p.payment_month,
+                p.payment_year,
+                p.tx_ref,
+                p.status,
+                p.created_at,
+                r.room_number
+            FROM payments p
+            JOIN rooms r ON p.room_id = r.room_id
+            WHERE p.user_id = $1
+            ORDER BY p.created_at DESC
+        `;
+
+        const result = await db.query(query, [userId]);
+
+        res.render('resident-payment-history', {
+            user: req.session.user,
+            payments: result.rows
+        });
+    } catch (err) {
+        console.error('Error fetching resident payment history:', err);
+        res.status(500).send('Server Error');
+    }
+});
+
 // ==========================================
 // LANDLORD API ROUTES
 // ==========================================
