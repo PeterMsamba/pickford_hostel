@@ -1,0 +1,38 @@
+<%- include('partials/header', { title: 'Residents Directory - Hostel Manager' }) %>
+
+<main class="container">
+    <h2>Resident Student Directory</h2>
+
+    <table border="1" cellpadding="8" cellspacing="0" style="width: 100%; border-collapse: collapse; margin-top: 15px;">
+        <thead>
+            <tr style="background-color: #f2f2f2;">
+                <th>Name</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Program of Study</th>
+                <th>Semester</th>
+                <th>Assigned Room</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% if (residents.length === 0) { %>
+                <tr>
+                    <td colspan="6" style="text-align: center;">No registered residents found.</td>
+                </tr>
+            <% } else { %>
+                <% residents.forEach(resident => { %>
+                    <tr>
+                        <td><%= resident.name %></td>
+                        <td><%= resident.email %></td>
+                        <td><%= resident.phone || 'N/A' %></td>
+                        <td><%= resident.program_of_study || 'N/A' %></td>
+                        <td><%= resident.semester || 'N/A' %></td>
+                        <td><strong><%= resident.room_number %></strong></td>
+                    </tr>
+                <% }); %>
+            <% } %>
+        </tbody>
+    </table>
+</main>
+
+<%- include('partials/footer') %>

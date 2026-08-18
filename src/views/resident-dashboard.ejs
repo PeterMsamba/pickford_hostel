@@ -1,45 +1,50 @@
-<%- include('partials/header') %>
+<%- include('partials/header', { title: 'Resident Dashboard - Hostel Manager' }) %>
+
 <main class="container">
   <h2>Resident Dashboard</h2>
+  <p>Welcome, <strong><%= user.name %></strong> (<%= user.program_of_study || 'Student' %> - <%= user.semester || '' %>)</p>
 
   <% if (!booking) { %>
-    <div class="alert alert-info">
+    <div class="alert alert-info" style="background: #e7f3fe; border-left: 6px solid #2196F3; padding: 15px; margin-top: 15px;">
       <p>You have not booked a room yet.</p>
-      <a href="/rooms" class="btn btn-primary">Browse Available Rooms</a>
+      <a href="/rooms" class="btn" style="display: inline-block; background: #2196F3; color: white; padding: 8px 15px; text-decoration: none; border-radius: 4px; margin-top: 10px;">Browse Available Rooms</a>
     </div>
   <% } else { %>
-    <div class="card">
+    <div class="card" style="border: 1px solid #ddd; padding: 15px; border-radius: 6px; margin-bottom: 20px;">
       <h3>Room Details</h3>
-      <p><strong>Room:</strong> <%= booking.room_number %></p>
+      <p><strong>Room Number:</strong> <%= booking.room_number %></p>
       <p><strong>Monthly Rate:</strong> MWK <%= booking.monthly_rate %></p>
     </div>
 
-    <div class="card">
-      <h3>Rent Status (<%= currentMonth %>/<%= currentYear %>)</h3>
-      <% if (hasPaidCurrentMonth) { %>
-        <p class="status success">✓ Rent Paid for this Month</p>
-      <% } else { %>
-        <p class="status failed">⚠ Rent Unpaid for this Month</p>
+    <div class="card" style="border: 1px solid #ddd; padding: 15px; border-radius: 6px;">
+      <h3>Rent Payment Status (<%= currentMonth %>/<%= currentYear %>)</h3>
 
-        <!-- Payment Form -->
-        <form id="payForm">
+      <% if (hasPaidCurrentMonth) { %>
+        <p class="status success" style="color: green; font-weight: bold;">✓ Rent Paid for this Month</p>
+      <% } else { %>
+        <p class="status failed" style="color: #d9534f; font-weight: bold;">⚠ Rent Unpaid for this Month</p>
+
+        <!-- PayChangu Form -->
+        <form id="payForm" style="margin-top: 15px;">
           <input type="hidden" id="amount" value="<%= booking.monthly_rate %>">
           <input type="hidden" id="roomId" value="<%= booking.room_id %>">
           <input type="hidden" id="month" value="<%= currentMonth %>">
           <input type="hidden" id="year" value="<%= currentYear %>">
 
-          <div class="group">
-            <label>Email</label>
-            <input type="email" id="email" value="<%= user.email %>" required />
+          <div style="margin-bottom: 10px;">
+            <label style="display:block;">Email Address</label>
+            <input type="email" id="email" value="<%= user.email %>" required style="width: 100%; padding: 8px;" />
           </div>
 
-          <div class="group">
-            <label>Mobile Money Number (Airtel / TNM)</label>
-            <input type="tel" id="mobile" value="<%= user.phone %>" required />
-            <div id="networkBadge" class="badge"></div>
+          <div style="margin-bottom: 10px;">
+            <label style="display:block;">Mobile Money Number (Airtel / TNM)</label>
+            <input type="tel" id="mobile" value="<%= user.phone %>" placeholder="099... or 088..." required style="width: 100%; padding: 8px;" />
+            <div id="networkBadge" style="margin-top: 5px; font-weight: bold;"></div>
           </div>
 
-          <button type="submit" id="btn">Pay Rent Now</button>
+          <button type="submit" id="btn" style="background: #0275d8; color: white; padding: 10px 18px; border: none; cursor: pointer; border-radius: 4px;">
+            Pay Rent Now (MWK <%= booking.monthly_rate %>)
+          </button>
         </form>
       <% } %>
     </div>
@@ -54,11 +59,11 @@
     mobileInput.addEventListener('input', () => {
       const val = mobileInput.value.trim();
       if (/^(099|098|99|98)/.test(val)) {
-        badge.textContent = 'Network: Airtel Money';
-        badge.className = 'badge airtel';
+        badge.textContent = 'Network detected: Airtel Money';
+        badge.style.color = 'red';
       } else if (/^(088|089|88|89)/.test(val)) {
-        badge.textContent = 'Network: TNM Mpamba';
-        badge.className = 'badge tnm';
+        badge.textContent = 'Network detected: TNM Mpamba';
+        badge.style.color = 'green';
       } else {
         badge.textContent = '';
       }
@@ -66,23 +71,39 @@
 
     document.getElementById('payForm').addEventListener('submit', async (e) => {
       e.preventDefault();
-      const res = await fetch('/api/resident/pay-rent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          amount: document.getElementById('amount').value,
-          roomId: document.getElementById('roomId').value,
-          month: document.getElementById('month').value,
-          year: document.getElementById('year').value,
-          email: document.getElementById('email').value,
-          mobile: mobileInput.value
-        })
-      });
-      const data = await res.json();
-      if (data.success && data.checkoutUrl) {
-        window.location.href = data.checkoutUrl;
+      const btn = document.getElementById('btn');
+      btn.disabled = true;
+      btn.textContent = 'Processing Payment...';
+
+      try {
+        const res = await fetch('/api/resident/pay-rent', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            amount: document.getElementById('amount').value,
+            roomId: document.getElementById('roomId').value,
+            month: document.getElementById('month').value,
+            year: document.getElementById('year').value,
+            email: document.getElementById('email').value,
+            mobile: mobileInput.value
+          })
+        });
+
+        const data = await res.json();
+        if (data.success && data.checkoutUrl) {
+          window.location.href = data.checkoutUrl;
+        } else {
+          alert('Payment Initialization Failed: ' + (data.message || 'Unknown error'));
+          btn.disabled = false;
+          btn.textContent = 'Pay Rent Now';
+        }
+      } catch (err) {
+        alert('Payment request error.');
+        btn.disabled = false;
+        btn.textContent = 'Pay Rent Now';
       }
     });
   }
 </script>
+
 <%- include('partials/footer') %>

@@ -1,54 +1,68 @@
-<%- include('partials/header') %>
+<%- include('partials/header', { title: 'Landlord Dashboard - Hostel Manager' }) %>
+
 <main class="container">
-  <h2>Landlord Overview - Resident Rent Status</h2>
+    <h2>Landlord Dashboard</h2>
+    <p>Welcome, <strong><%= user.name %></strong></p>
 
-  <form method="GET" action="/landlord/dashboard" class="filter-form">
-    <label for="month">Select Month:</label>
-    <select name="month" id="month">
-      <% for (let m = 1; m <= 12; m++) { %>
-        <option value="<%= m %>" <%= m === currentMonth ? 'selected' : '' %>>Month <%= m %></option>
-      <% } %>
-    </select>
+    <% if (typeof success !== 'undefined' && success) { %>
+        <div class="alert alert-success" style="color: green; background: #e6ffe6; padding: 10px; margin-bottom: 15px;">
+            <%= success %>
+        </div>
+    <% } %>
 
-    <label for="year">Year:</label>
-    <input type="number" name="year" value="<%= currentYear %>" style="width: 100px;">
-    
-    <button type="submit" class="btn btn-secondary">Filter</button>
-  </form>
+    <% if (typeof error !== 'undefined' && error) { %>
+        <div class="alert alert-danger" style="color: red; background: #ffe6e6; padding: 10px; margin-bottom: 15px;">
+            <%= error %>
+        </div>
+    <% } %>
 
-  <table class="user-list-table">
-    <thead>
-      <tr>
-        <th>Resident Name</th>
-        <th>Room Number</th>
-        <th>Phone Number</th>
-        <th>Monthly Rent</th>
-        <th>Status (<%= currentMonth %>/<%= currentYear %>)</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% if (residents && residents.length > 0) { %>
-        <% residents.forEach(r => { %>
-          <tr>
-            <td><%= r.resident_name %></td>
-            <td><%= r.room_number %></td>
-            <td><%= r.resident_phone %></td>
-            <td>MWK <%= r.monthly_rate %></td>
-            <td>
-              <% if (r.payment_status === 'successful') { %>
-                <span class="badge success">Paid</span>
-              <% } else { %>
-                <span class="badge failed">Unpaid</span>
-              <% } %>
-            </td>
-          </tr>
-        <% }) %>
-      <% } else { %>
-        <tr>
-          <td colspan="5">No active residents found.</td>
-        </tr>
-      <% } %>
-    </tbody>
-  </table>
+    <section class="card" style="margin-top: 20px;">
+        <h2>Register New Resident</h2>
+
+        <form action="/landlord/register-resident" method="POST">
+            <div class="form-group">
+                <label for="name">Student Full Name</label>
+                <input type="text" id="name" name="name" placeholder="e.g. Jane Doe" required>
+            </div>
+
+            <div class="form-group">
+                <label for="email">Student Email / Username</label>
+                <input type="email" id="email" name="email" placeholder="student@example.com" required>
+            </div>
+
+            <div class="form-group">
+                <label for="phone">Phone Number</label>
+                <input type="tel" id="phone" name="phone" placeholder="e.g. 0991234567">
+            </div>
+
+            <div class="form-group">
+                <label for="program_of_study">Program of Study</label>
+                <input type="text" id="program_of_study" name="program_of_study" placeholder="e.g. BSc in Computer Science" required>
+            </div>
+
+            <div class="form-group">
+                <label for="semester">Semester / Year</label>
+                <select id="semester" name="semester" required>
+                    <option value="" disabled selected>Select Semester</option>
+                    <option value="Year 1 - Semester 1">Year 1 - Semester 1</option>
+                    <option value="Year 1 - Semester 2">Year 1 - Semester 2</option>
+                    <option value="Year 2 - Semester 1">Year 2 - Semester 1</option>
+                    <option value="Year 2 - Semester 2">Year 2 - Semester 2</option>
+                    <option value="Year 3 - Semester 1">Year 3 - Semester 1</option>
+                    <option value="Year 3 - Semester 2">Year 3 - Semester 2</option>
+                    <option value="Year 4 - Semester 1">Year 4 - Semester 1</option>
+                    <option value="Year 4 - Semester 2">Year 4 - Semester 2</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Assign Initial Password</label>
+                <input type="password" id="password" name="password" placeholder="••••••••" required>
+            </div>
+
+            <button type="submit" class="btn">Create Resident Account</button>
+        </form>
+    </section>
 </main>
+
 <%- include('partials/footer') %>

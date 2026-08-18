@@ -1,0 +1,44 @@
+<%- include('partials/header', { title: 'Available Rooms - Hostel Manager' }) %>
+
+<main class="container">
+    <h2>Available Hostel Rooms</h2>
+
+    <div style="display: flex; gap: 20px; flex-wrap: wrap; margin-top: 20px;">
+        <% if (rooms.length === 0) { %>
+            <p>No available rooms at the moment. Please check back later.</p>
+        <% } else { %>
+            <% rooms.forEach(room => { %>
+                <div class="card" style="border: 1px solid #ccc; padding: 15px; border-radius: 8px; width: 250px;">
+                    <h3><%= room.room_number %></h3>
+                    <p><strong>Monthly Rate:</strong> MWK <%= room.monthly_rate %></p>
+                    <button class="btn-book" data-id="<%= room.room_id %>" style="background: #28a745; color: white; padding: 8px 12px; border: none; cursor: pointer;">
+                        Book This Room
+                    </button>
+                </div>
+            <% }); %>
+        <% } %>
+    </div>
+</main>
+
+<script>
+    document.querySelectorAll('.btn-book').forEach(button => {
+        button.addEventListener('click', async () => {
+            const roomId = button.getAttribute('data-id');
+            const res = await fetch('/api/resident/book-room', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ roomId })
+            });
+
+            const data = await res.json();
+            if (data.success) {
+                alert('Room booked successfully!');
+                window.location.href = '/resident/dashboard';
+            } else {
+                alert(data.message);
+            }
+        });
+    });
+</script>
+
+<%- include('partials/footer') %>

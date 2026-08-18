@@ -1,0 +1,56 @@
+<%- include('partials/header', { title: 'Payment Audit - Hostel Manager' }) %>
+
+<main class="container">
+    <h2>Monthly Rent Audit Trail</h2>
+
+    <form method="GET" action="/landlord/payments" style="margin-bottom: 20px;">
+        <label for="month">Month:</label>
+        <select name="month" id="month">
+            <% for(let m = 1; m <= 12; m++) { %>
+                <option value="<%= m %>" <%= m === selectedMonth ? 'selected' : '' %>>Month <%= m %></option>
+            <% } %>
+        </select>
+
+        <label for="year">Year:</label>
+        <input type="number" name="year" id="year" value="<%= selectedYear %>" style="width: 80px;">
+
+        <button type="submit">Filter Transactions</button>
+    </form>
+
+    <table border="1" cellpadding="8" cellspacing="0" style="width: 100%; border-collapse: collapse;">
+        <thead>
+            <tr style="background-color: #f2f2f2;">
+                <th>Date</th>
+                <th>Resident</th>
+                <th>Room</th>
+                <th>Amount (MWK)</th>
+                <th>Transaction Ref</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% if (payments.length === 0) { %>
+                <tr>
+                    <td colspan="6" style="text-align: center;">No transactions found for this period.</td>
+                </tr>
+            <% } else { %>
+                <% payments.forEach(payment => { %>
+                    <tr>
+                        <td><%= new Date(payment.created_at).toLocaleDateString() %></td>
+                        <td><%= payment.resident_name %> (<%= payment.resident_email %>)</td>
+                        <td><%= payment.room_number %></td>
+                        <td>MWK <%= payment.amount %></td>
+                        <td><code><%= payment.tx_ref %></code></td>
+                        <td>
+                            <span style="color: <%= payment.status === 'successful' ? 'green' : 'red' %>;">
+                                <%= payment.status.toUpperCase() %>
+                            </span>
+                        </td>
+                    </tr>
+                <% }); %>
+            <% } %>
+        </tbody>
+    </table>
+</main>
+
+<%- include('partials/footer') %>

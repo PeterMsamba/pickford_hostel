@@ -3,6 +3,13 @@
 <div class="auth-container">
     <div class="card">
         <h2 class="card-title">Sign In</h2>
+
+        <% if (typeof error !== 'undefined' && error) { %>
+            <div class="alert alert-danger" style="color: red; margin-bottom: 15px;">
+                <%= error %>
+            </div>
+        <% } %>
+
         <form action="/login" method="POST">
             <div class="form-group">
                 <label for="email">Email Address</label>

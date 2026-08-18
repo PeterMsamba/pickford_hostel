@@ -52,5 +52,5 @@ app.use((err, req, res, next) => {
 // 8. Start Listening
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-    console.log(`🚀 Pickford Hostel Server running on http://localhost:${PORT}`);
+    console.log(`Pickford Hostel Server running on http://localhost:${PORT}`);
 });
