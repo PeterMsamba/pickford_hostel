@@ -1,84 +1,81 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Landlord - Payment Status Report</title>
-    <link rel="stylesheet" href="/css/style.css">
-</head>
-<body>
-    <nav>
-        <a href="/landlord/dashboard">Dashboard</a>
-        <a href="/landlord/residents">Residents</a>
-        <a href="/landlord/payment-status">Payment Status</a>
-        <a href="/logout">Logout</a>
-    </nav>
+<%- include('partials/header', { title: 'Landlord - Payment Status Report' }) %>
 
+<main class="container">
     <h2>Monthly Payment Breakdown</h2>
 
     <form method="GET" action="/landlord/payment-status">
-        <label>Month:</label>
-        <input type="number" name="month" min="1" max="12" value="<%= selectedMonth %>">
-        <label>Year:</label>
-        <input type="number" name="year" value="<%= selectedYear %>">
+        <label for="month">Month:</label>
+        <input type="number" id="month" name="month" min="1" max="12" value="<%= selectedMonth %>">
+        
+        <label for="year">Year:</label>
+        <input type="number" id="year" name="year" value="<%= selectedYear %>">
+        
         <button type="submit">Filter</button>
     </form>
 
-    <hr>
-
-    <h3>Paid Residents (<%= paidResidents.length %>)</h3>
-    <table border="1" cellpadding="8">
-        <thead>
-            <tr>
-                <th>Resident Name</th>
-                <th>Room</th>
-                <th>Amount Paid</th>
-                <th>Tx Ref</th>
-                <th>Date</th>
-            </tr>
-        </thead>
-        <tbody>
-            <% if (paidResidents.length === 0) { %>
-                <tr><td colspan="5">No paid records found for this period.</td></tr>
-            <% } else { %>
-                <% paidResidents.forEach(r => { %>
-                    <tr style="background-color: #e6ffe6;">
-                        <td><%= r.resident_name %></td>
-                        <td><%= r.room_number %></td>
-                        <td>MWK <%= r.monthly_rate %></td>
-                        <td><%= r.tx_ref %></td>
-                        <td><%= new Date(r.payment_date).toLocaleDateString() %></td>
+    <section class="card">
+        <h3>Paid Residents (<%= paidResidents.length %>)</h3>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Resident Name</th>
+                        <th>Room</th>
+                        <th>Amount Paid</th>
+                        <th>Tx Ref</th>
+                        <th>Date</th>
                     </tr>
-                <% }); %>
-            <% } %>
-        </tbody>
-    </table>
+                </thead>
+                <tbody>
+                    <% if (paidResidents.length === 0) { %>
+                        <tr><td colspan="5" style="text-align: center;">No paid records found for this period.</td></tr>
+                    <% } else { %>
+                        <% paidResidents.forEach(r => { %>
+                            <tr style="background-color: var(--success-bg, #dcfce7);">
+                                <td><%= r.resident_name %></td>
+                                <td><%= r.room_number %></td>
+                                <td>MWK <%= Number(r.monthly_rate || 0).toLocaleString() %></td>
+                                <td><code><%= r.tx_ref %></code></td>
+                                <td><%= new Date(r.payment_date).toLocaleDateString() %></td>
+                            </tr>
+                        <% }); %>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+    </section>
 
-    <h3>Unpaid Residents (<%= unpaidResidents.length %>)</h3>
-    <table border="1" cellpadding="8">
-        <thead>
-            <tr>
-                <th>Resident Name</th>
-                <th>Email</th>
-                <th>Phone</th>
-                <th>Room</th>
-                <th>Due Amount</th>
-            </tr>
-        </thead>
-        <tbody>
-            <% if (unpaidResidents.length === 0) { %>
-                <tr><td colspan="5">All residents have paid for this month!</td></tr>
-            <% } else { %>
-                <% unpaidResidents.forEach(r => { %>
-                    <tr style="background-color: #ffe6e6;">
-                        <td><%= r.resident_name %></td>
-                        <td><%= r.resident_email %></td>
-                        <td><%= r.resident_phone || 'N/A' %></td>
-                        <td><%= r.room_number %></td>
-                        <td>MWK <%= r.monthly_rate %></td>
+    <section class="card">
+        <h3>Unpaid Residents (<%= unpaidResidents.length %>)</h3>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Resident Name</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>Room</th>
+                        <th>Due Amount</th>
                     </tr>
-                <% }); %>
-            <% } %>
-        </tbody>
-    </table>
-</body>
-</html>
+                </thead>
+                <tbody>
+                    <% if (unpaidResidents.length === 0) { %>
+                        <tr><td colspan="5" style="text-align: center;">All residents have paid for this month!</td></tr>
+                    <% } else { %>
+                        <% unpaidResidents.forEach(r => { %>
+                            <tr style="background-color: var(--danger-bg, #fee2e2);">
+                                <td><%= r.resident_name %></td>
+                                <td><%= r.resident_email %></td>
+                                <td><%= r.resident_phone || 'N/A' %></td>
+                                <td><%= r.room_number %></td>
+                                <td>MWK <%= Number(r.monthly_rate || 0).toLocaleString() %></td>
+                            </tr>
+                        <% }); %>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+
+<%- include('partials/footer') %>

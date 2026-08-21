@@ -5,39 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><%= typeof title !== 'undefined' ? title : 'Hostel Management System' %></title>
     <link rel="stylesheet" href="/css/style.css">
-    <style>
-        .navbar {
-            background-color: #1f2937;
-            padding: 1rem 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .navbar brand {
-            color: #ffffff;
-            font-size: 1.25rem;
-            font-weight: bold;
-            text-decoration: none;
-        }
-        .nav-links {
-            list-style: none;
-            display: flex;
-            gap: 1.5rem;
-            margin: 0;
-            padding: 0;
-        }
-        .nav-links a {
-            color: #d1d5db;
-            text-decoration: none;
-            font-weight: 500;
-        }
-        .nav-links a:hover {
-            color: #ffffff;
-        }
-        .logout-btn {
-            color: #ef4444 !important;
-        }
-    </style>
 </head>
 <body>
     <header>
@@ -59,9 +26,12 @@
                     <li><a href="/logout" class="logout-btn">Logout</a></li>
                 </ul>
             <% } else { %>
-                <ul class="nav-links">
-                    <li><a href="/login">Login</a></li>
-                </ul>
+                <!-- Only render the Login link if the current page is NOT the login page -->
+                <% if (typeof title === 'undefined' || !title.toLowerCase().includes('login')) { %>
+                    <ul class="nav-links">
+                        <li><a href="/login">Login</a></li>
+                    </ul>
+                <% } %>
             <% } %>
         </nav>
     </header>
