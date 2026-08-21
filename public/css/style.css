@@ -344,3 +344,28 @@ code {
         margin: 4rem auto;
     }
 }
+
+/* Add to public/css/style.css */
+.btn-danger {
+    background-color: var(--danger, #dc2626);
+    color: #ffffff;
+    border: none;
+    border-radius: var(--radius, 8px);
+    cursor: pointer;
+    font-weight: 600;
+    transition: background-color 0.2s ease;
+}
+
+.btn-danger:hover {
+    background-color: #b91c1c;
+}
+
+.btn-sm {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: auto;
+    min-height: 32px;
+    padding: 6px 12px;
+    font-size: 0.85rem;
+}
